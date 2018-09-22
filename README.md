@@ -1,5 +1,10 @@
 # Domestic Violence in Colombia - Trend and Outlier Analysis (What happend on april 21 of 2018)
 
+I wanted to make this project to analyze domestic violence incidents in my country using visualization technologies, my motiviation was to help gaining insights on this social issue. In 2018 the incidents rose in just the [first three months](https://www.eltiempo.com/colombia/medellin/ninos-de-0-a-5-anos-son-las-principales-victimas-de-maltrato-en-medellin-205052) surpassing the numbers for the same period in the 2017, Colombia is a country wounded by constant violence, a war of fifty years, narcoterrorism, common crime, the crude reality is this violence is not just outside in the streets, but is in the homes, affecting childrens. I hope this visualization helps fighting against it.
+
+## Dataset
+
+The data was taken from an official goverment page [Datos Abiertos](https://www.datos.gov.co/Seguridad-y-Defensa/Violencia-intrafamiliar-2018/s9rg-bzb5)
 
 ## The Technology Used
 
@@ -10,6 +15,8 @@ python -m SimpleHTTPServer 8080
 ```
 
 Open your browser and type http://localhost:8080/ and voila!
+
+Although is not necessary to run the project, you may want to learn this technologies which were used to build the visualization.
 
 * [Javascript](https://www.w3schools.com/js/)
 * [D3 version 5](https://d3js.org/)
