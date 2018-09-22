@@ -1,96 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<meta charset="UTF-8">
-	<title>Violencia Intrafamiliar 2018</title>
+    <meta charset="UTF-8">
+    <title>Violencia Intrafamiliar 2018</title>
 </head>
+
 <body>
-	<h1>Violencia Intrafamiliar</h1>
-	<h2>Un fenomeno que vá en aumento</h2>
-	<div class="chart">
-	</div>
-	
-	<script src="https://d3js.org/d3.v5.min.js"></script>
-	<script type="text/javascript">
-		
-		var data = [
-  {month: new Date(2015, 0, 1), apples: 3840, bananas: 1920, cherries: 960, dates: 400},
-  {month: new Date(2015, 1, 1), apples: 1600, bananas: 1440, cherries: 960, dates: 400},
-  {month: new Date(2015, 2, 1), apples:  34, bananas:  60, cherries: 640, dates: 400},
-  {month: new Date(2015, 3, 1), apples:  320, bananas:  480, cherries: 640, dates: 400},
-  {month: new Date(2015, 4, 1), apples:  500, bananas:  23, cherries: 100, dates: 50},
-  {month: new Date(2015, 5, 1), apples: 1600, bananas: 1440, cherries: 960, dates: 400},
-  {month: new Date(2015, 6, 1), apples: 1200, bananas: 1000, cherries: 800, dates: 700},
-  {month: new Date(2015, 7, 1), apples: 320, bananas: 1000, cherries: 640, dates: 700},
-  {month: new Date(2015, 8, 1), apples: 1200, bananas: 1000, cherries: 800, dates: 400},
-  {month: new Date(2015, 9, 1), apples: 34, bananas: 1000, cherries: 640, dates: 1000},
-  {month: new Date(2015, 10, 1), apples: 3840, bananas: 1000, cherries: 800, dates: 700},
-  {month: new Date(2015, 11, 1), apples: 1200, bananas: 480, cherries: 100, dates: 2000},
-];
+    <h1>Violencia Intrafamiliar</h1>
+    <h2>Un fenomeno que vá en aumento</h2>
+    <div class="chart">
+    </div>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script type="text/javascript">
+    var allowedDepartments = ['ANTIOQUIA', 'CUNDINAMARCA', 'VALLE', 'SANTANDER', 'BOYACA', 'META',
+        'BOLÍVAR', 'ATLÁNTICO', 'CAUCA'
+    ];
+    var timeParser = d3.timeParse("%Y-%m-%d");
+    var dataSet = [];
+    var uniqueDepartments = [];
+    var aggregated = [];
+    var stack;
+    var series;
+    var y;
 
-const retrieveData = async () => {
-  let page;
-  let offset = 0;
-  let data = [];
+    const colorrange = ["#045A8D", "#2B8CBE", "#74A9CF", "#A6BDDB", "#D0D1E6", "#F1EEF6", "#DF65B0", "#C994C7", "#FDBB84"];
 
-  do {
-    page = await (await fetch(
-      `https://www.datos.gov.co/resource/cdhn-7vn8.json?$offset=${offset}`
-    )).json();
-    offset += 1000;
-    data = data.concat(page);
-  } while (page.length);
-  return data;
-}
+    const retrieveData = async() => {
+        let page;
+        let offset = 0;
+        let data = [];
 
-var dataSet = [];
+        do {
+            page = await (await fetch(
+                `https://www.datos.gov.co/resource/cdhn-7vn8.json?$offset=${offset}`
+            )).json();
+            offset += 1000;
+            data = data.concat(page);
+        } while (page.length);
+        return data;
+    }
 
-retrieveData().then(response => dataSet = response);
+    const getUniqueDepartments = (incidentsArray) => {
+        uniqueDepartments = [];
+        incidentsArray.forEach(item => {
+            if (uniqueDepartments.indexOf(item.departamento) < 0 && item.departamento)
+                uniqueDepartments.push(item.departamento);
+        });
+        return uniqueDepartments;
+    }
 
-var stack = d3.stack()
-    .keys(["apples", "bananas", "cherries", "dates"])
-    .order(d3.stackOrderNone)
-    .offset(d3.stackOffsetWiggle);
+    const getTotalsByDate = (aggregated, date) => {
+        if (!date)
+            return null;
 
-var series = stack(data);
+        filtered = aggregated.filter(function(item) {
+            return item.fecha.getTime() === date.getTime();
+        });
 
-var width = 600,
-    height = 500;
+        if (filtered)
+            return filtered[0];
 
-var x = d3.scaleTime()
-    .domain([new Date(2015, 0, 1),new Date(2015, 11, 1)])
-    .range([0, width]);
+        return null;
+    }
 
-// setup axis
-var xAxis = d3.axisBottom(x);
+    const allowedDepartment = (departamento) => {
+        return departamento && allowedDepartments.indexOf(departamento) > -1
+    }
 
-var y = d3.scaleLinear()
-    .domain([0, d3.max(series, function(layer) { return d3.max(layer, function(d){ return d[0] + d[1];}); })])
-    .range([height, 0]);
+    const buildAccumulate = (incidentsArray) => {
+        aggregated = [];
+        incidentsArray.forEach(item => {
 
-var color = d3.scaleLinear()
-    .range(["#51D0D7", "#31B5BB"]);
+            if (allowedDepartment(item.departamento) && item.fecha) {
 
-var area = d3.area()
-    .x(function(d) { console.info('in area function', d); return x(d.data.month); })
-    .y0(function(d) { return y(d[0]); })
-    .y1(function(d) { return y(d[1]); })
-    .curve(d3.curveBasis);
+                formatedDate = timeParser(item.fecha.substr(0, 10));
+                itemByDate = getTotalsByDate(aggregated, formatedDate);
 
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
+                if (!itemByDate) {
+                    newItem = { fecha: formatedDate };
+                    allowedDepartments.forEach(d => {
+                        newItem[d] = 0;
+                    })
+                    newItem[item.departamento] = 1;
+                    aggregated.push(newItem);
+                } else {
+                    if (itemByDate[item.departamento])
+                        itemByDate[item.departamento] += 1;
+                    else
+                        itemByDate[item.departamento] = 1;
+                }
+            }
+        });
 
-svg.selectAll("path")
-    .data(series)
-    .enter().append("path")
-    .attr("d", area)
-    .style("fill", function() { return color(Math.random()); });
+        return aggregated;
+    }
 
-svg.append("g")
-            .attr("class", "axis axis--x")
-            .attr("transform", "translate(0," + (height) + ")")
-            .call(xAxis); 
-	</script>
+    var width = 900,
+        height = 500;
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var color = d3.scaleOrdinal()
+        .range(colorrange);
+
+    retrieveData().then(response => {
+        dataSet = response;
+        uniqueDepartments = getUniqueDepartments(response);
+        aggregated = buildAccumulate(response);
+
+        stack = d3.stack()
+            .keys(allowedDepartments)
+            .order(d3.stackOrderNone)
+            .offset(d3.stackOffsetWiggle);
+
+        series = stack(aggregated);
+
+        y = d3.scaleLinear()
+            .domain([0, d3.max(series, function(layer) { return d3.max(layer, function(d) { return d[1]; }); })])
+            .range([height, 0]);
+
+        svg.selectAll("path")
+            .data(series)
+            .enter().append("path")
+            .attr("d", area)
+            .style("fill", function(d, i) {
+                return color(d.key)
+            });
+    });
+
+
+
+    var x = d3.scaleTime()
+        .domain([new Date(2018, 1, 1), new Date(2018, 7, 8)])
+        .range([300, width]);
+
+    // setup axis
+    var xAxis = d3.axisBottom(x);
+
+    var area = d3.area()
+        .x(function(d) { console.info('in area function', d); return x(d.data.fecha); })
+        .y0(function(d) {
+            return y(d[0]);
+        })
+        .y1(function(d) {
+            return y(d[1]);
+        })
+        .curve(d3.curveBasis);
+
+    svg.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + (height - 20) + ")")
+        .call(xAxis);
+    </script>
 </body>
+
 </html>
