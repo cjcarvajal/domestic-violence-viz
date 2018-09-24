@@ -103,7 +103,8 @@
         timeFormater = d3.timeFormat("%Y/%m/%d %A");
 
         actualXPos = d3.event.pageX;
-        outputText = "Fecha : " + timeFormater(x.invert(d3.event.pageX));
+        outputText = "Fecha : " + timeFormater(x.invert(d3.event.pageX - 55)) + 
+            " - " + Math.floor(y.invert(d3.event.pageY - 430)) + " incidentes";
 
         svg.selectAll(".day_label").remove();
         svg.selectAll("rect").remove();
